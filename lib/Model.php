@@ -3,6 +3,7 @@
 namespace lib;
 
 use config\Config;
+use models\User;
 
 class Model
 {
@@ -20,6 +21,14 @@ class Model
      */
     public function table_name(){
         return '';
+    }
+
+    /**
+     * Возвращает класс
+     * @return string класс.
+     */
+    public static function classNameStatic(){
+        return get_called_class();
     }
 
     /**
@@ -53,21 +62,80 @@ class Model
     }
 
     /**
+     * Возвращает имя таблицы
+     * @param string $field поле таблицы
+     * @param string|integer $value значение поля таблицы
+     * @return array поля таблицы.
+     */
+    public function findByField($field, $value){
+        $arr = $this->db->getByField($field, $value, $this->table_name(),($this->getRuleByField($field,'integer') ? 'int' : 'str'));
+        if(empty($arr[0])){
+            return false;
+        }
+        foreach($this->fields() as $fl){
+            $this->$fl = $arr[0][$fl];
+        }
+        $this->id = $arr[0]['id'];
+        return $arr[0];
+    }
+
+    /**
+     * @param string $field
+     * @param string $value
+     * @return object $obj
+     */
+    public static function getByField($field, $value){
+        $class = self::classNameStatic();
+        $obj = new $class();
+        $obj->findByField($field, $value);
+        unset($obj->db);
+        return $obj;
+    }
+
+    /**
+     * @return array|bool
+     */
+    public static function getAll(){
+        $class = self::classNameStatic();
+        $obj = new $class();
+        $arr = $obj->find()->all();
+        return $arr;
+    }
+
+    /**
+     * Возвращает имя таблицы
+     * @param string $field поле таблицы
+     * @param integer $id значение поля таблицы
+     * @return string поля таблицы.
+     */
+    public function getFieldById($field, $id){
+        $str = $this->db->getFromId($id, $this->table_name());
+        if(isset($str[$field])){
+            return $str[$field];
+        }
+        else {
+            return false;
+        }
+    }
+
+    /**
      * Создает начальный запрос к таблице
+     * @param string $select необходимые поля
      * @return $this the model instance itself.
      */
-    public function find(){
-        $this->query = "SELECT * FROM `".$this->table_name()."`";
+    public function find($select = '*'){
+        $this->query = "SELECT $select FROM `".$this->table_name()."`";
         return $this;
     }
 
     /**
      * Добавляет к запросу "WHERE"
      * @param $arr array поля по которым необходимо произвести поиск
+     * @param $logic string логика запроса
      * @return $this the model instance itself.
      */
-    public function where($arr){
-        $this->query .= " WHERE ";
+    public function where($arr, $logic = 'AND'){
+        $this->query .= " WHERE ( ";
         if(!empty($arr)){
             foreach($arr as $k => $v){
                 if($this->getRuleByField($k,'integer')){
@@ -76,9 +144,34 @@ class Model
                 else {
                     $this->query .= $k . " LIKE '%" . $v . "%'";
                 }
-                $this->query .= " AND ";
+                $this->query .= " $logic ";
             }
-            $this->query = substr($this->query, 0, -5);
+            $this->query = substr($this->query, 0, -4);
+            $this->query .= " )";
+        }
+        return $this;
+    }
+
+    /**
+     * Добавляет к запросу "AND"
+     * @param $arr array поля по которым необходимо произвести поиск
+     * @param $logic string логика запроса
+     * @return $this the model instance itself.
+     */
+    public function andWhere($arr, $logic = "AND"){
+        $this->query .= " AND ( ";
+        if(!empty($arr)){
+            foreach($arr as $k => $v){
+                if($this->getRuleByField($k,'integer')){
+                    $this->query .= $k . " = " . $v;
+                }
+                else {
+                    $this->query .= $k . " LIKE '%" . $v . "%'";
+                }
+                $this->query .= " $logic ";
+            }
+            $this->query = substr($this->query, 0, -4);
+            $this->query .= " )";
         }
         return $this;
     }
@@ -128,6 +221,16 @@ class Model
     }
 
     /**
+     * @param $table string имя таблицы.
+     * @param $on string параметры присоединения.
+     * @return $this the model instance itself.
+     */
+    public function leftJoin($table, $on){
+        $this->query .= " LEFT JOIN `$table` ON $on";
+        return $this;
+    }
+
+    /**
      * Осуществляет сохранение (обновление) данных в таблице
      * @return integer|boolean id записи или false.
      */
@@ -157,6 +260,37 @@ class Model
             }
             return $this->db->update($data, $this->table_name(), ['id'=>$this->id]);
         }
+    }
+
+    /**
+     * @param $id integer
+     * @return array|bool
+     */
+    public function deleteAll($id){
+        if(is_array($id)){
+            foreach ($id as $i) {
+                $this->db->queryDelete($this->table_name(), $i);
+            }
+        }else{
+            return $this->db->queryDelete($this->table_name(), $id);
+        }
+        return true;
+    }
+
+    /**
+     * @param $field string
+     * @param $value integer|string
+     * @return array|bool
+     */
+    public function deleteByField($field,$value){
+        return $this->db->queryDeleteByField($this->table_name(), $field, $value);
+    }
+
+    /**
+     * @return mixed
+     */
+    public function get_stat(){
+        return $this->db->stat;
     }
 
     /**

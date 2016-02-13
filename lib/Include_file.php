@@ -36,4 +36,17 @@ class Include_file
             closedir($handle);
         }
     }
+
+    public function addHelpers(){
+        if ($handle = opendir(ROOT_DIR . DOP_DIR . '/lib/helpers/')) {
+            /* Именно этот способ чтения элементов каталога является правильным. */
+            while (false !== ($file = readdir($handle))) {
+                if ($file != "." && $file != "..") {
+                    $classes[] = $file;
+                    require_once (ROOT_DIR . DOP_DIR . "/lib/helpers/" . $file);
+                }
+            }
+            closedir($handle);
+        }
+    }
 }

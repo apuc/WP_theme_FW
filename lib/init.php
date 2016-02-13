@@ -19,12 +19,7 @@ require_once "Widget.php";
 require_once "Db.php";
 require_once "Model.php";
 
-require_once "helpers/ArrayHelper.php";
-require_once "helpers/Debug.php";
-require_once "helpers/Forms.php";
-require_once "helpers/Geo.php";
-require_once "helpers/Cookie.php";
-require_once "helpers/WP.php";
+$app->include_file->addHelpers();
 
 $app->include_file->addModels();
 $app->include_file->addWidgets();

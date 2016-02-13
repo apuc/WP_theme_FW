@@ -2,6 +2,8 @@
 
 namespace lib;
 
+use lib\helpers\Debug;
+
 class Db
 {
     public $stat;
@@ -79,14 +81,25 @@ class Db
         return $this->getOne($query);
     }
 
-    public function getByField($field, $value, $table){
+    public function getByField($field, $value, $table, $field_type = false){
         $query = "SELECT * FROM `$table` WHERE ";
-        if(is_int($value)){
-            $query .= "$field = $value";
+        if($field_type){
+            if($field_type == 'int'){
+                $query .= "$field = $value";
+            }
+            else {
+                $query .= "$field LIKE '%$value%'";
+            }
         }
         else {
-            $query .= "$field LIKE '%$value%'";
+            if(is_int($value)){
+                $query .= "$field = $value";
+            }
+            else {
+                $query .= "$field LIKE '%$value%'";
+            }
         }
+
         return $this->rawQuery($query);
     }
 
@@ -168,6 +181,19 @@ class Db
             $arr[] = $row;
         }
         return $arr;
+    }
+
+    public function queryDelete($table, $id)
+    {
+        $query = "DELETE FROM `$table` WHERE id=$id";
+        return $this->rawQuery($query);
+    }
+
+    public function queryDeleteByField($table, $field, $value)
+    {
+        $query = "DELETE FROM `$table` WHERE `$field` = '$value'";
+
+        return $this->rawQuery($query);;
     }
 
 }
