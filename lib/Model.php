@@ -138,16 +138,33 @@ class Model
         $this->query .= " WHERE ( ";
         if(!empty($arr)){
             foreach($arr as $k => $v){
-                if($this->getRuleByField($k,'integer')){
-                    $this->query .= $k . " = " . $v;
+                if(is_array($v)){
+                    $this->query .= $k . " IN ( " . implode(',', $v) . " )";
                 }
                 else {
-                    $this->query .= $k . " LIKE '%" . $v . "%'";
+                    if($this->getRuleByField($k,'integer')){
+                        $this->query .= $k . " = " . $v;
+                    }
+                    else {
+                        $this->query .= $k . " LIKE '%" . $v . "%'";
+                    }
                 }
                 $this->query .= " $logic ";
             }
             $this->query = substr($this->query, 0, -4);
             $this->query .= " )";
+        }
+        return $this;
+    }
+
+    /**
+     * Добавляет к запросу "GROUP BY"
+     * @param $field string поле по которому необходимо произвести группировку
+     * @return $this the model instance itself.
+     */
+    public function groupBy($field){
+        if(!empty($field)){
+            $this->query .= " GROUP BY $field ";
         }
         return $this;
     }
@@ -275,6 +292,14 @@ class Model
             return $this->db->queryDelete($this->table_name(), $id);
         }
         return true;
+    }
+
+    /**
+     * @param $arr array
+     * @return array|bool
+     */
+    public function deleteWhere($arr){
+        return $this->db->queryDeleteWhere($this->table_name(), $arr);
     }
 
     /**

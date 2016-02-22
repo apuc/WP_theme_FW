@@ -189,6 +189,16 @@ class Db
         return $this->rawQuery($query);
     }
 
+    public function queryDeleteWhere($table, $arr){
+        $query = "DELETE FROM `$table` WHERE";
+        foreach($arr as $k=>$v){
+            $query .= " $k = $v";
+            $query .= " AND";
+        }
+        $query = substr($query, 0, -4);
+        return $this->rawQuery($query);
+    }
+
     public function queryDeleteByField($table, $field, $value)
     {
         $query = "DELETE FROM `$table` WHERE `$field` = '$value'";
